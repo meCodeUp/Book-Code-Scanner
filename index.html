@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bücher Code Scanner</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 </head>
@@ -46,6 +48,7 @@
                     <input type="file" id="cover-upload" accept="image/*" capture="environment" style="display:none;">
                 </div>
                 <form id="book-form">
+                    <input type="hidden" id="book-id">
                     <div class="form-group">
                         <label for="title">Titel</label>
                         <input type="text" id="title" name="title" required>
@@ -78,9 +81,14 @@
         <section id="screen-library" class="screen hidden">
             <div class="toolbar">
                 <span id="book-count">0 Bücher</span>
-                <button id="export-btn" class="icon-btn-text">
-                    <i class="ph ph-export"></i> Export
-                </button>
+                <div style="display:flex; gap:0.5rem;">
+                    <button id="export-html-btn" class="icon-btn-text">
+                        <i class="ph ph-file-html"></i> HTML
+                    </button>
+                    <button id="export-btn" class="icon-btn-text">
+                        <i class="ph ph-export"></i> CSV
+                    </button>
+                </div>
             </div>
             <div id="library-list" class="book-list">
                 <!-- Book Items injected here -->
@@ -93,6 +101,22 @@
                 <i class="ph ph-scan"></i>
             </button>
         </section>
+    </div>
+
+    <!-- CROP MODAL -->
+    <div id="crop-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Bild zuschneiden</h2>
+            </div>
+            <div class="crop-container">
+                <img id="crop-image" src="" alt="Crop Preview">
+            </div>
+            <div class="modal-actions">
+                <button id="crop-cancel-btn" class="secondary-btn">Abbrechen</button>
+                <button id="crop-confirm-btn" class="primary-btn">Übernehmen</button>
+            </div>
+        </div>
     </div>
 
     <script src="app.js"></script>
