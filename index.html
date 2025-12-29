@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bücher Code Scanner</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Navigation / Header -->
+        <header class="app-header">
+            <h1>Meine Bibliothek</h1>
+            <button id="nav-list-btn" class="icon-btn" aria-label="Bibliothek"><i class="ph ph-books"></i></button>
+        </header>
+
+        <!-- SCREENS -->
+        
+        <!-- Screen 1: Scanner -->
+        <section id="screen-scanner" class="screen active">
+            <div id="scanner-container">
+                <div id="reader"></div>
+                <div class="scanner-overlay">
+                    <p>Scanne einen Buch-Barcode</p>
+                </div>
+            </div>
+            <button id="cancel-scan-btn" class="secondary-btn">Abbrechen</button>
+        </section>
+
+        <!-- Screen 2: Detail / Form -->
+        <section id="screen-detail" class="screen hidden">
+            <div class="detail-card">
+                <div class="book-cover-placeholder" id="detail-cover">
+                    <i class="ph ph-book-open"></i>
+                </div>
+                <form id="book-form">
+                    <div class="form-group">
+                        <label for="title">Titel</label>
+                        <input type="text" id="title" name="title" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="authors">Autor(en)</label>
+                        <input type="text" id="authors" name="authors">
+                    </div>
+                    <div class="form-group">
+                        <label for="publishedDate">Jahr</label>
+                        <input type="text" id="publishedDate" name="publishedDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="categories">Genre</label>
+                        <input type="text" id="categories" name="categories">
+                    </div>
+                    <div class="form-group">
+                        <label for="notes">Notizen / Zustand</label>
+                        <textarea id="notes" name="notes" placeholder="z.B. Neuwertig, Geliehen von X..."></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" id="discard-btn" class="secondary-btn">Verwerfen</button>
+                        <button type="submit" id="save-btn" class="primary-btn">Speichern</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- Screen 3: Library List -->
+        <section id="screen-library" class="screen hidden">
+            <div class="toolbar">
+                <span id="book-count">0 Bücher</span>
+                <button id="export-btn" class="icon-btn-text">
+                    <i class="ph ph-export"></i> Export
+                </button>
+            </div>
+            <div id="library-list" class="book-list">
+                <!-- Book Items injected here -->
+                <div class="empty-state">
+                    <i class="ph ph-books"></i>
+                    <p>Noch keine Bücher gescannt.</p>
+                </div>
+            </div>
+            <button id="fab-scan" class="fab">
+                <i class="ph ph-scan"></i>
+            </button>
+        </section>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
