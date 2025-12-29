@@ -32,11 +32,10 @@ function showScreen(screenName) {
 // initialization
 function init() {
     renderLibrary();
-    // Start at library if we have books, otherwise scanner
     if (myLibrary.length > 0) {
         showScreen('library');
     } else {
-        showScreen('library'); // Changed to Library as default base
+        showScreen('library');
     }
 
     // Event Listeners
@@ -61,62 +60,90 @@ function init() {
 
     exportBtn.addEventListener('click', exportLibrary);
 
-    // Camera Capture
+    const exportHtmlBtn = document.getElementById('export-html-btn');
+    if (exportHtmlBtn) {
+        exportHtmlBtn.addEventListener('click', exportLibraryHTML);
+    }
+
+    // Camera Capture & Crop
     const cameraBtn = document.getElementById('camera-btn');
     const coverUpload = document.getElementById('cover-upload');
+    const cropModal = document.getElementById('crop-modal');
+    const cropConfirmBtn = document.getElementById('crop-confirm-btn');
+    const cropCancelBtn = document.getElementById('crop-cancel-btn');
 
     if (cameraBtn && coverUpload) {
         cameraBtn.addEventListener('click', () => {
             coverUpload.click();
         });
-
         coverUpload.addEventListener('change', handleCoverUpload);
+    }
+
+    if (cropConfirmBtn) {
+        cropConfirmBtn.addEventListener('click', confirmCrop);
+    }
+    if (cropCancelBtn) {
+        cropCancelBtn.addEventListener('click', () => {
+            document.getElementById('crop-modal').classList.add('hidden');
+            document.getElementById('cover-upload').value = '';
+        });
     }
 }
 
 // Image Handling
+// Global Crop Vars
+let cropper = null;
+
+// Image Handling with Cropper
 function handleCoverUpload(e) {
     const file = e.target.files[0];
     if (!file) return;
 
     const reader = new FileReader();
     reader.onload = (event) => {
-        const img = new Image();
-        img.onload = () => {
-            // Resize image to max 400x400 to save storage
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
+        // Open Modal
+        const modal = document.getElementById('crop-modal');
+        const imageElement = document.getElementById('crop-image');
 
-            const MAX_SIZE = 400;
-            let width = img.width;
-            let height = img.height;
+        imageElement.src = event.target.result;
+        modal.classList.remove('hidden');
 
-            if (width > height) {
-                if (width > MAX_SIZE) {
-                    height *= MAX_SIZE / width;
-                    width = MAX_SIZE;
-                }
-            } else {
-                if (height > MAX_SIZE) {
-                    width *= MAX_SIZE / height;
-                    height = MAX_SIZE;
-                }
-            }
+        // Init Cropper
+        if (cropper) {
+            cropper.destroy();
+        }
 
-            canvas.width = width;
-            canvas.height = height;
-            ctx.drawImage(img, 0, 0, width, height);
-
-            // Compress quality 0.7
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-
-            // Update preview
-            const coverContainer = document.getElementById('detail-cover');
-            coverContainer.innerHTML = `<img src="${dataUrl}" alt="Cover" style="width:100%; height:100%; object-fit:cover; border-radius:8px;">`;
-        };
-        img.src = event.target.result;
+        // Wait a tick for image to load in DOM
+        setTimeout(() => {
+            cropper = new Cropper(imageElement, {
+                aspectRatio: 2 / 3, // Book ratio roughly
+                viewMode: 1,
+                autoCropArea: 1,
+            });
+        }, 100);
     };
     reader.readAsDataURL(file);
+}
+
+function confirmCrop() {
+    if (!cropper) return;
+
+    // Get cropped canvas
+    const canvas = cropper.getCroppedCanvas({
+        width: 400, // Resize directly here
+        height: 600,
+        imageSmoothingQuality: 'high'
+    });
+
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+
+    // Update Form Preview
+    const coverContainer = document.getElementById('detail-cover');
+    coverContainer.innerHTML = `<img src="${dataUrl}" alt="Cover" style="width:100%; height:100%; object-fit:cover; border-radius:8px;">`;
+
+    // Close Modal
+    document.getElementById('crop-modal').classList.add('hidden');
+    document.getElementById('cover-upload').value = '';
 }
 
 // Scanner Logic
@@ -219,18 +246,33 @@ function saveBook() {
     const imgMatch = coverHtml.match(/src="([^"]*)"/);
     const thumbnail = imgMatch ? imgMatch[1] : null;
 
-    const newBook = {
-        id: Date.now(),
-        title,
-        authors,
-        publishedDate,
-        categories,
-        notes,
-        thumbnail,
-        scannedAt: new Date().toISOString()
-    };
+    const idInput = document.getElementById('book-id').value;
 
-    myLibrary.unshift(newBook); // Add to top
+    if (idInput) {
+        // Update existing
+        const id = parseInt(idInput);
+        const index = myLibrary.findIndex(b => b.id === id);
+        if (index !== -1) {
+            myLibrary[index] = {
+                ...myLibrary[index],
+                title, authors, publishedDate, categories, notes, thumbnail
+            };
+        }
+    } else {
+        // Create new
+        const newBook = {
+            id: Date.now(),
+            title,
+            authors,
+            publishedDate,
+            categories,
+            notes,
+            thumbnail,
+            scannedAt: new Date().toISOString()
+        };
+        myLibrary.unshift(newBook);
+    }
+
     localStorage.setItem('myLibrary', JSON.stringify(myLibrary));
 
     renderLibrary();
@@ -272,16 +314,41 @@ function renderLibrary() {
             <div class="book-info" style="flex:1;">
                 <h3>${book.title}</h3>
                 <p>${book.authors}</p>
-                ${book.notes ? `<p style="color:var(--accent); font-size:0.8rem; margin-top:0.2rem;">Currently: ${book.notes}</p>` : ''}
+                ${book.notes ? `<p style="color:var(--accent); font-size:0.8rem; margin-top:0.2rem;">${book.notes}</p>` : ''}
             </div>
-            <button class="icon-btn" onclick="deleteBook(${book.id})" style="color:var(--text-muted); font-size:1.2rem;"><i class="ph ph-trash"></i></button>
+            <div style="display:flex; gap:0.5rem;">
+                <button class="icon-btn" onclick="editBook(${book.id})" style="color:var(--text-muted); font-size:1.2rem;"><i class="ph ph-pencil"></i></button>
+                <button class="icon-btn" onclick="deleteBook(${book.id})" style="color:var(--text-muted); font-size:1.2rem;"><i class="ph ph-trash"></i></button>
+            </div>
         `;
         libraryList.appendChild(item);
     });
 }
 
-// Global scope for delete wrapper
+// Global scope
 window.deleteBook = deleteBook;
+window.editBook = editBook;
+
+function editBook(id) {
+    const book = myLibrary.find(b => b.id === id);
+    if (!book) return;
+
+    document.getElementById('book-id').value = book.id;
+    document.getElementById('title').value = book.title;
+    document.getElementById('authors').value = book.authors;
+    document.getElementById('publishedDate').value = book.publishedDate;
+    document.getElementById('categories').value = book.categories;
+    document.getElementById('notes').value = book.notes;
+
+    const coverContainer = document.getElementById('detail-cover');
+    if (book.thumbnail) {
+        coverContainer.innerHTML = `<img src="${book.thumbnail}" alt="Cover" style="width:100%; height:100%; object-fit:cover; border-radius:8px;">`;
+    } else {
+        coverContainer.innerHTML = '<i class="ph ph-book"></i>';
+    }
+
+    showScreen('detail');
+}
 
 // Export Logic
 async function exportLibrary() {
@@ -331,6 +398,76 @@ async function exportLibrary() {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
     }
+}
+
+// Export Logic (HTML)
+function exportLibraryHTML() {
+    if (myLibrary.length === 0) {
+        alert("Keine Daten zum Exportieren.");
+        return;
+    }
+
+    let rows = myLibrary.map(b => {
+        const img = b.thumbnail ? `<img src="${b.thumbnail}" style="height:60px;">` : '';
+        return `
+            <tr>
+                <td>${img}</td>
+                <td>${b.title}</td>
+                <td>${b.authors}</td>
+                <td>${b.publishedDate}</td>
+                <td>${b.notes}</td>
+            </tr>
+        `;
+    }).join('');
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Meine Bibliothek</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        img { max-height: 80px; }
+    </style>
+</head>
+<body>
+    <h1>Meine Bibliothek</h1>
+    <p>Exportiert am ${new Date().toLocaleDateString()}</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Cover</th>
+                <th>Titel</th>
+                <th>Autor</th>
+                <th>Jahr</th>
+                <th>Notizen</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${rows}
+        </tbody>
+    </table>
+</body>
+</html>
+    `;
+
+    const file = new File([htmlContent], "meine_bibliothek.html", { type: "text/html" });
+    downloadFile(file);
+}
+
+function downloadFile(file) {
+    const url = URL.createObjectURL(file);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = file.name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
 
 // Start App
