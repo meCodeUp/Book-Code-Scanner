@@ -88,6 +88,20 @@ function init() {
             document.getElementById('cover-upload').value = '';
         });
     }
+
+    const cropSkipBtn = document.getElementById('crop-skip-btn');
+    if (cropSkipBtn) {
+        cropSkipBtn.addEventListener('click', skipCrop);
+    }
+
+    // Register Service Worker for PWA
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('SW registered'))
+                .catch(err => console.log('SW failed', err));
+        });
+    }
 }
 
 // Image Handling
@@ -144,6 +158,45 @@ function confirmCrop() {
     // Close Modal
     document.getElementById('crop-modal').classList.add('hidden');
     document.getElementById('cover-upload').value = '';
+}
+
+function skipCrop() {
+    const imageElement = document.getElementById('crop-image');
+    if (!imageElement.src) return;
+
+    // We still want to resize to save storage
+    const img = new Image();
+    img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const MAX_SIZE = 400;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+            if (width > MAX_SIZE) {
+                height *= MAX_SIZE / width;
+                width = MAX_SIZE;
+            }
+        } else {
+            if (height > MAX_SIZE) {
+                width *= MAX_SIZE / height;
+                height = MAX_SIZE;
+            }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        const coverContainer = document.getElementById('detail-cover');
+        coverContainer.innerHTML = `<img src="${dataUrl}" alt="Cover" style="width:100%; height:100%; object-fit:cover; border-radius:8px;">`;
+
+        document.getElementById('crop-modal').classList.add('hidden');
+        document.getElementById('cover-upload').value = '';
+    };
+    img.src = imageElement.src;
 }
 
 // Scanner Logic

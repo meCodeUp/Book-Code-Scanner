@@ -5,6 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bücher Code Scanner</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#1a1a2e">
+    <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
@@ -113,6 +117,7 @@
                 <img id="crop-image" src="" alt="Crop Preview">
             </div>
             <div class="modal-actions">
+                <button id="crop-skip-btn" class="secondary-btn">Original</button>
                 <button id="crop-cancel-btn" class="secondary-btn">Abbrechen</button>
                 <button id="crop-confirm-btn" class="primary-btn">Übernehmen</button>
             </div>
