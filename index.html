@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="de">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,6 +9,7 @@
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 </head>
+
 <body>
     <div id="app">
         <!-- Navigation / Header -->
@@ -17,7 +19,7 @@
         </header>
 
         <!-- SCREENS -->
-        
+
         <!-- Screen 1: Scanner -->
         <section id="screen-scanner" class="screen active">
             <div id="scanner-container">
@@ -34,6 +36,14 @@
             <div class="detail-card">
                 <div class="book-cover-placeholder" id="detail-cover">
                     <i class="ph ph-book-open"></i>
+                </div>
+                <div class="cover-actions"
+                    style="display:flex; justify-content:center; gap:0.5rem; margin-bottom:1rem;">
+                    <button type="button" id="camera-btn" class="icon-btn-text small" style="font-size:0.9rem;">
+                        <i class="ph ph-camera"></i> Foto
+                    </button>
+                    <!-- Hidden file input -->
+                    <input type="file" id="cover-upload" accept="image/*" capture="environment" style="display:none;">
                 </div>
                 <form id="book-form">
                     <div class="form-group">
@@ -87,4 +97,5 @@
 
     <script src="app.js"></script>
 </body>
+
 </html>

@@ -49,7 +49,7 @@ function init() {
         stopScanner();
         showScreen('library');
     });
-    
+
     document.getElementById('book-form').addEventListener('submit', (e) => {
         e.preventDefault();
         saveBook();
@@ -60,20 +60,77 @@ function init() {
     });
 
     exportBtn.addEventListener('click', exportLibrary);
+
+    // Camera Capture
+    const cameraBtn = document.getElementById('camera-btn');
+    const coverUpload = document.getElementById('cover-upload');
+
+    if (cameraBtn && coverUpload) {
+        cameraBtn.addEventListener('click', () => {
+            coverUpload.click();
+        });
+
+        coverUpload.addEventListener('change', handleCoverUpload);
+    }
+}
+
+// Image Handling
+function handleCoverUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+            // Resize image to max 400x400 to save storage
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            const MAX_SIZE = 400;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+                if (width > MAX_SIZE) {
+                    height *= MAX_SIZE / width;
+                    width = MAX_SIZE;
+                }
+            } else {
+                if (height > MAX_SIZE) {
+                    width *= MAX_SIZE / height;
+                    height = MAX_SIZE;
+                }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // Compress quality 0.7
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+
+            // Update preview
+            const coverContainer = document.getElementById('detail-cover');
+            coverContainer.innerHTML = `<img src="${dataUrl}" alt="Cover" style="width:100%; height:100%; object-fit:cover; border-radius:8px;">`;
+        };
+        img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
 }
 
 // Scanner Logic
 function startScanner() {
     showScreen('scanner');
     isScanning = true;
-    
+
     // Use the Html5Qrcode library
     if (!html5QrcodeScanner) {
         html5QrcodeScanner = new Html5Qrcode("reader");
     }
 
     const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-    
+
     // Prefer back camera
     html5QrcodeScanner.start(
         { facingMode: "environment" },
@@ -100,7 +157,7 @@ function onScanSuccess(decodedText, decodedResult) {
     stopScanner();
     // Beep or Vibrate
     if (navigator.vibrate) navigator.vibrate(200);
-    
+
     fetchBookDetails(decodedText);
 }
 
@@ -111,15 +168,15 @@ function onScanFailure(error) {
 // API Logic
 async function fetchBookDetails(isbn) {
     showScreen('detail'); // Show detailed form immediately with loading state if needed
-    
+
     // Clear form
     document.getElementById('book-form').reset();
     document.getElementById('detail-cover').innerHTML = '<i class="ph ph-spinner ph-spin"></i>';
-    
+
     try {
         const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`);
         const data = await response.json();
-        
+
         if (data.totalItems > 0) {
             const book = data.items[0].volumeInfo;
             populateForm(book, isbn);
@@ -138,10 +195,10 @@ function populateForm(book, isbn) {
     document.getElementById('authors').value = book.authors ? book.authors.join(', ') : '';
     document.getElementById('publishedDate').value = book.publishedDate || '';
     document.getElementById('categories').value = book.categories ? book.categories.join(', ') : '';
-    
+
     // Store ISBN in a hidden way or data attribute, needed for saving?
     // We can allow user to edit everything, so just grabbing values from form is fine.
-    
+
     const coverContainer = document.getElementById('detail-cover');
     if (book.imageLinks && book.imageLinks.thumbnail) {
         coverContainer.innerHTML = `<img src="${book.imageLinks.thumbnail.replace('http:', 'https:')}" alt="Cover" style="width:100%; height:100%; object-fit:cover; border-radius:8px;">`;
@@ -175,13 +232,13 @@ function saveBook() {
 
     myLibrary.unshift(newBook); // Add to top
     localStorage.setItem('myLibrary', JSON.stringify(myLibrary));
-    
+
     renderLibrary();
     showScreen('library');
 }
 
 function deleteBook(id) {
-    if(confirm("Möchtest du dieses Buch wirklich löschen?")) {
+    if (confirm("Möchtest du dieses Buch wirklich löschen?")) {
         myLibrary = myLibrary.filter(b => b.id !== id);
         localStorage.setItem('myLibrary', JSON.stringify(myLibrary));
         renderLibrary();
@@ -205,8 +262,8 @@ function renderLibrary() {
     myLibrary.forEach(book => {
         const item = document.createElement('div');
         item.className = 'book-item';
-        
-        const imgTag = book.thumbnail 
+
+        const imgTag = book.thumbnail
             ? `<img src="${book.thumbnail}" class="book-item-cover" alt="Cover">`
             : `<div class="book-item-cover" style="display:flex;align-items:center;justify-content:center;background:#334;"><i class="ph ph-book"></i></div>`;
 
